@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="hi-en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Daily Health Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#0a0a0a;--card:#1a1a1a;--border:#2a2a2a;--text:#e8e8e8;--text2:#888;
+--blue:#4A9EFF;--green:#10D48E;--amber:#F59E0B;--red:#FF6B6B;
+--font-body:'Inter',sans-serif;--font-head:'Space Grotesk',sans-serif;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;-webkit-tap-highlight-color:transparent}
+body{display:flex;flex-direction:column;max-width:600px;margin:0 auto;width:100%;position:relative}
+.app{display:flex;flex-direction:column;height:100%;overflow:hidden}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 16px 90px;scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
+.content::-webkit-scrollbar{width:3px}
+.content::-webkit-scrollbar-track{background:transparent}
+.content::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
+h1,h2,h3,.num{font-family:var(--font-head)}
+.tab-content{display:none;animation:fadeIn .2s ease}
+.tab-content.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Header */
+.header{text-align:center;padding:12px 0 8px}
+.time-display{font-family:var(--font-head);font-size:2.4rem;font-weight:700;color:var(--blue);letter-spacing:1px}
+.date-display{font-size:.85rem;color:var(--text2);margin-top:2px}
+.quote-box{margin-top:10px;padding:10px 16px;background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:12px;font-size:.82rem;color:#aaa;font-style:italic;line-height:1.5}
+
+/* Next Task Banner */
+.next-task-box{margin-top:12px;border-radius:14px;overflow:hidden}
+.abhi-karo{background:linear-gradient(135deg,#1a2a1a,#1a1a1a);border:1px solid #2a3a2a;padding:12px 14px;border-left:4px solid var(--green);margin-bottom:6px;border-radius:12px;animation:pulse-border 2s infinite}
+.agle-mein{background:var(--card);border:1px solid var(--border);padding:10px 14px;border-radius:12px}
+.nt-label{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:4px;font-weight:600}
+.nt-label.green{color:var(--green)}.nt-label.blue{color:var(--blue)}
+.nt-task{font-size:.92rem;font-weight:500}
+.nt-time{font-size:.78rem;color:var(--text2);margin-top:2px}
+.congrats-box{text-align:center;padding:16px;background:linear-gradient(135deg,#1a2a1a,#1a1a2e);border-radius:14px;margin-top:12px;border:1px solid #2a3a2a}
+.congrats-box .emoji{font-size:2rem}
+.congrats-box p{margin-top:6px;font-size:.9rem;color:var(--green)}
+
+@keyframes pulse-border{0%,100%{border-left-color:var(--green)}50%{border-left-color:#0a8a5a}}
+
+/* Progress */
+.progress-section{display:flex;gap:12px;margin-top:14px;align-items:center}
+.progress-ring-wrap{position:relative;width:68px;height:68px;flex-shrink:0}
+.progress-ring{transform:rotate(-90deg)}
+.progress-ring-bg{fill:none;stroke:#222;stroke-width:6}
+.progress-ring-fg{fill:none;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .5s ease,stroke .3s ease}
+.progress-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--font-head);font-size:1.1rem;font-weight:700}
+.progress-info{flex:1}
+.progress-info .score{font-family:var(--font-head);font-size:1rem;font-weight:600}
+.progress-info .streak{font-size:.85rem;color:var(--amber);margin-top:4px}
+
+/* Water Counter */
+.water-section{margin-top:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px}
+.water-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.water-header h3{font-size:.95rem;font-weight:600}
+.water-count{font-family:var(--font-head);font-size:1rem;color:var(--blue);font-weight:600}
+.water-bar-bg{height:10px;background:#222;border-radius:5px;overflow:hidden}
+.water-bar{height:100%;background:linear-gradient(90deg,var(--blue),#66b5ff);border-radius:5px;transition:width .4s ease;min-width:0}
+.water-btns{display:flex;gap:8px;margin-top:10px}
+.water-btn{flex:1;padding:10px;border:none;border-radius:10px;font-size:1.1rem;font-weight:600;cursor:pointer;background:#222;color:var(--text);font-family:var(--font-head);min-height:44px;transition:all .2s ease}
+.water-btn:active{transform:scale(.95)}
+.water-btn.plus{background:var(--blue);color:#fff}
+.water-btn.minus{background:#2a2a2a;color:var(--text2)}
+
+/* Task List */
+.section-title{font-size:.8rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--text2);margin:18px 0 10px;font-weight:600}
+.task-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;transition:all .2s ease;cursor:pointer;min-height:52px;position:relative;overflow:hidden;-webkit-user-select:none;user-select:none}
+.task-item:active{transform:scale(.98)}
+.task-item.checked{opacity:.5}.task-item.checked .task-name{text-decoration:line-through;color:var(--text2)}
+.task-item.overdue{border-color:#442020;background:#1a1212}
+.task-item.current{border-left:4px solid var(--green);animation:pulse-border 2s infinite}
+.task-emoji{font-size:1.3rem;flex-shrink:0;width:32px;text-align:center}
+.task-body{flex:1;min-width:0}
+.task-name{font-size:.88rem;font-weight:500;line-height:1.3}
+.task-time{font-size:.72rem;color:var(--text2);margin-top:2px;font-family:var(--font-head)}
+.task-check{width:28px;height:28px;border-radius:8px;border:2px solid #444;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s ease;position:relative}
+.task-item.checked .task-check{background:var(--green);border-color:var(--green);transform:scale(1.05)}
+.task-check::after{content:'✓';font-size:14px;color:#fff;opacity:0;transition:all .2s ease;font-weight:700}
+.task-item.checked .task-check::after{opacity:1}
+.task-item.overdue .task-time{color:var(--red)}
+
+/* Mood */
+.mood-section{margin-top:16px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
+.mood-section h3{font-size:.95rem;font-weight:600;margin-bottom:12px}
+.mood-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.mood-label{font-size:.82rem;color:var(--text2)}
+.mood-value{font-size:1.2rem}
+.mood-slider-wrap{margin-top:8px}
+.mood-slider-label{font-size:.78rem;color:var(--text2);margin-bottom:6px;display:flex;justify-content:space-between}
+.mood-btns{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.mood-btn{width:36px;height:36px;border-radius:10px;border:2px solid #333;background:transparent;color:var(--text);font-family:var(--font-head);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s ease;display:flex;align-items:center;justify-content:center}
+.mood-btn.active{border-color:var(--blue);background:var(--blue);color:#fff}
+.mood-btn:active{transform:scale(.9)}
+.mood-saved{font-size:.75rem;color:var(--green);text-align:center;margin-top:6px}
+
+/* Weekly */
+.week-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px}
+.week-card h3{font-size:.9rem;font-weight:600;margin-bottom:10px}
+.week-avg{text-align:center;margin-bottom:14px}
+.week-avg .num{font-size:2rem;font-weight:700;font-family:var(--font-head)}
+.week-avg .lbl{font-size:.78rem;color:var(--text2)}
+.week-days{display:flex;gap:6px}
+.week-day{flex:1;text-align:center;padding:8px 4px;border-radius:10px;background:#222}
+.week-day.best{border:2px solid var(--amber)}
+.week-day .d-name{font-size:.65rem;color:var(--text2);font-weight:600;text-transform:uppercase}
+.week-day .d-score{font-size:.85rem;font-weight:700;font-family:var(--font-head);margin:4px 0 2px}
+.week-day .d-emoji{font-size:1rem}
+
+/* Bar Chart */
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;margin:12px 0;padding:0 4px}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;height:100%}
+.bar{width:100%;border-radius:6px 6px 0 0;transition:height .5s ease;min-height:2px;margin-top:auto}
+.bar-label{font-size:.6rem;color:var(--text2);margin-top:4px;font-weight:600;text-transform:uppercase}
+.bar-val{font-size:.65rem;font-family:var(--font-head);font-weight:600;margin-bottom:2px}
+
+/* Compliance */
+.compliance-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.comp-card{background:#222;border-radius:12px;padding:12px;text-align:center}
+.comp-card .comp-num{font-family:var(--font-head);font-size:1.5rem;font-weight:700}
+.comp-card .comp-lbl{font-size:.72rem;color:var(--text2);margin-top:4px}
+
+/* Badges */
+.badge-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:14px}
+.badge-card.earned{border-color:var(--amber);background:linear-gradient(135deg,#1a1a0a,#1a1a1a)}
+.badge-emoji{font-size:2rem;width:50px;text-align:center}
+.badge-info{flex:1}
+.badge-info .b-name{font-size:.95rem;font-weight:600}
+.badge-info .b-desc{font-size:.78rem;color:var(--text2);margin-top:2px}
+.badge-card:not(.earned){opacity:.4}
+.streak-display{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;margin-bottom:14px}
+.streak-display .s-fire{font-size:2.5rem}
+.streak-display .s-num{font-family:var(--font-head);font-size:2rem;font-weight:700;color:var(--amber);margin:4px 0}
+.streak-display .s-lbl{font-size:.82rem;color:var(--text2)}
+.streak-display .s-best{font-size:.78rem;color:var(--text2);margin-top:8px}
+
+/* Bottom Nav */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:600px;background:#111;border-top:1px solid #222;display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.nav-btn{flex:1;padding:10px 0 8px;text-align:center;cursor:pointer;transition:all .2s ease;-webkit-user-select:none;user-select:none;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.nav-btn .nav-icon{font-size:1.3rem}
+.nav-btn .nav-label{font-size:.6rem;margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)}
+.nav-btn.active .nav-label{color:var(--blue)}
+.nav-btn.active .nav-icon{transform:scale(1.1)}
+
+/* Notification Banner */
+.notif-banner{position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-100%);width:100%;max-width:600px;background:linear-gradient(135deg,#1a2a3a,#1a1a2e);border-bottom:2px solid var(--blue);padding:14px 16px;z-index:200;transition:transform .3s ease;display:flex;align-items:center;gap:12px}
+.notif-banner.show{transform:translateX(-50%) translateY(0)}
+.notif-banner .n-text{flex:1;font-size:.88rem;font-weight:500}
+.notif-banner .n-dismiss{background:var(--blue);border:none;color:#fff;border-radius:8px;padding:8px 14px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:var(--font-body);min-height:36px}
+
+/* Badge Animation */
+@keyframes badgePop{0%{transform:scale(0)}50%{transform:scale(1.2)}100%{transform:scale(1)}}
+.badge-anim{animation:badgePop .5s ease}
+
+/* Milestone popup */
+.milestone-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);background:var(--card);border:2px solid var(--amber);border-radius:20px;padding:30px;text-align:center;z-index:300;transition:transform .4s ease;min-width:260px}
+.milestone-popup.show{transform:translate(-50%,-50%) scale(1)}
+.milestone-popup .mp-emoji{font-size:3rem}
+.milestone-popup .mp-title{font-family:var(--font-head);font-size:1.2rem;font-weight:700;margin:10px 0 6px;color:var(--amber)}
+.milestone-popup .mp-desc{font-size:.85rem;color:var(--text2)}
+.milestone-popup .mp-close{margin-top:16px;background:var(--amber);border:none;color:#000;padding:10px 24px;border-radius:10px;font-weight:600;cursor:pointer;font-family:var(--font-body);font-size:.9rem}
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:250;opacity:0;transition:opacity .3s ease;pointer-events:none}
+.overlay.show{opacity:1;pointer-events:auto}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="notif-banner" id="notifBanner">
+  <span class="n-text" id="notifText"></span>
+  <button class="n-dismiss" onclick="dismissNotif()">OK 👍</button>
+</div>
+<div class="overlay" id="overlay" onclick="closeMilestone()"></div>
+<div class="milestone-popup" id="milestonePopup">
+  <div class="mp-emoji" id="mpEmoji"></div>
+  <div class="mp-title" id="mpTitle"></div>
+  <div class="mp-desc" id="mpDesc"></div>
+  <button class="mp-close" onclick="closeMilestone()">Badhiya! 🎉</button>
+</div>
+
+<div class="content" id="mainContent">
+  <!-- Tab 1: Aaj -->
+  <div class="tab-content active" id="tab-aaj">
+    <div class="header">
+      <div class="time-display" id="timeDisplay">--:--</div>
+      <div class="date-display" id="dateDisplay"></div>
+      <div class="quote-box" id="quoteBox"></div>
+    </div>
+    <div class="next-task-box" id="nextTaskBox"></div>
+    <div class="progress-section">
+      <div class="progress-ring-wrap">
+        <svg class="progress-ring" width="68" height="68"><circle class="progress-ring-bg" cx="34" cy="34" r="28"/><circle class="progress-ring-fg" id="progressRing" cx="34" cy="34" r="28" stroke-dasharray="175.93" stroke-dashoffset="175.93"/></svg>
+        <div class="progress-center" id="progressPct">0%</div>
+      </div>
+      <div class="progress-info">
+        <div class="score" id="scoreText">0/19 tasks</div>
+        <div class="streak" id="streakText">🔥 0 din ka streak</div>
+      </div>
+    </div>
+    <div class="water-section">
+      <div class="water-header"><h3>💧 Paani Counter</h3><span class="water-count" id="waterCount">0/16 glasses</span></div>
+      <div class="water-bar-bg"><div class="water-bar" id="waterBar" style="width:0%"></div></div>
+      <div class="water-btns"><button class="water-btn minus" onclick="changeWater(-1)">−</button><button class="water-btn plus" onclick="changeWater(1)">+ 1 Glass</button></div>
+    </div>
+    <div class="section-title">📋 Aaj ke Tasks</div>
+    <div id="timedTaskList"></div>
+  </div>
+
+  <!-- Tab 2: Rules -->
+  <div class="tab-content" id="tab-rules">
+    <div class="section-title">📜 Daily Rules</div>
+    <div id="ruleTaskList"></div>
+    <div class="mood-section">
+      <h3>🧠 Morning Mood <span style="font-size:.72rem;color:var(--text2)">(before 12pm)</span></h3>
+      <div class="mood-btns" id="moodMorningBtns"></div>
+      <div class="mood-saved" id="moodMorningSaved"></div>
+    </div>
+    <div class="mood-section" style="margin-top:12px">
+      <h3>🌙 Night Mood <span style="font-size:.72rem;color:var(--text2)">(after 8pm)</span></h3>
+      <div class="mood-btns" id="moodNightBtns"></div>
+      <div class="mood-saved" id="moodNightSaved"></div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Week -->
+  <div class="tab-content" id="tab-week">
+    <div class="week-card">
+      <h3>📊 Weekly Overview</h3>
+      <div class="week-avg"><div class="num" id="weekAvg">0%</div><div class="lbl">Avg Score (7 days)</div></div>
+      <div class="week-days" id="weekDays"></div>
+    </div>
+    <div class="week-card">
+      <h3>📈 Daily Progress</h3>
+      <div class="bar-chart" id="barChart"></div>
+    </div>
+    <div class="week-card">
+      <h3>💊 Supplement Compliance</h3>
+      <div class="compliance-grid" id="suppComp"></div>
+    </div>
+    <div class="week-card">
+      <h3>🧴 Skin Rule Compliance</h3>
+      <div class="compliance-grid" id="skinComp"></div>
+    </div>
+  </div>
+
+  <!-- Tab 4: Badges -->
+  <div class="tab-content" id="tab-badges">
+    <div class="streak-display">
+      <div class="s-fire">🔥</div>
+      <div class="s-num" id="badgeStreakNum">0</div>
+      <div class="s-lbl">Din ka Streak</div>
+      <div class="s-best" id="badgeBestStreak">Best: 0 din</div>
+    </div>
+    <div class="section-title">🏅 Milestones</div>
+    <div id="badgeList"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <div class="nav-btn active" onclick="switchTab('aaj')"><div class="nav-icon">📋</div><div class="nav-label">Aaj</div></div>
+  <div class="nav-btn" onclick="switchTab('rules')"><div class="nav-icon">📜</div><div class="nav-label">Rules</div></div>
+  <div class="nav-btn" onclick="switchTab('week')"><div class="nav-icon">📊</div><div class="nav-label">Week</div></div>
+  <div class="nav-btn" onclick="switchTab('badges')"><div class="nav-icon">🏅</div><div class="nav-label">Badges</div></div>
+</nav>
+</div>
+
+<script>
+// ==================== DATA ====================
+const TIMED_TASKS = [
+  {id:'water_morning',time:'06:00',name:'Paani piya (1 glass)',emoji:'💧',cat:'hydration'},
+  {id:'amla_morning',time:'06:15',name:'Amla juice 20ml khali pet',emoji:'🫙',cat:'supplement'},
+  {id:'running',time:'06:30',name:'Running shuru (3-5km)',emoji:'🏃',cat:'exercise'},
+  {id:'weights',time:'07:00',name:'Weights + Bodyweight (pushups, pullups, core)',emoji:'💪',cat:'exercise'},
+  {id:'eggs',time:'08:00',name:'3 Ande khaye (protein source)',emoji:'🥚',cat:'food'},
+  {id:'ashwagandha',time:'08:30',name:'Ashwagandha KSM-66 with food',emoji:'💊',cat:'supplement'},
+  {id:'lions_mane',time:'09:00',name:"Lion's Mane with food",emoji:'🍄',cat:'supplement'},
+  {id:'lunch',time:'13:30',name:'Lunch (no dairy, no sugar)',emoji:'🍛',cat:'food'},
+  {id:'zinc',time:'14:00',name:'Zinc/Zincovit with lunch',emoji:'💊',cat:'supplement'},
+  {id:'seeds',time:'17:00',name:'Pumpkin seeds + Akhrot (handful)',emoji:'🥜',cat:'food'},
+  {id:'dinner',time:'20:00',name:'Dinner (light, no dairy)',emoji:'🍽️',cat:'food'},
+  {id:'collagen',time:'21:00',name:'Collagen + Amla juice (Vitamin C ke saath)',emoji:'✨',cat:'supplement'},
+  {id:'triphala',time:'22:00',name:'Triphala churan + warm water',emoji:'🌿',cat:'supplement'},
+  {id:'sleep_prep',time:'22:30',name:'Phone band, sone ki taiyari',emoji:'😴',cat:'sleep'},
+];
+const RULE_TASKS = [
+  {id:'no_sugar',name:'Aaj sugar bilkul nahi khaya',emoji:'🚫',cat:'rule'},
+  {id:'no_dairy',name:'Aaj dairy bilkul nahi khaya',emoji:'🥛',cat:'rule'},
+  {id:'face_wash',name:'Face wash 2 baar kiya (salicylic acid)',emoji:'🧴',cat:'skin'},
+  {id:'water_4l',name:'4 litre paani complete',emoji:'💧',cat:'hydration'},
+  {id:'no_face_touch',name:'Face bilkul nahi chuha baar baar',emoji:'🙅',cat:'skin'},
+];
+const ALL_TASKS = [...TIMED_TASKS,...RULE_TASKS];
+const QUOTES = [
+  "Ek din ek step. Bas itna kaafi hai.",
+  "Consistency > Perfection. Hamesha.",
+  "Teri body change ho rahi hai, chahe dikh rahi ho ya nahi.",
+  "25 saal mein jo fix hoga, 30 mein yaad rahega.",
+  "Har supplement ek investment hai teri future self mein.",
+  "Skin, brain, body — teeno ek saath improve ho rahe hain.",
+  "Kal agar nahi hua, aaj kar. Aaj nahi hua, kal kar.",
+  "Tu apna khyal rakh raha hai — yeh badi baat hai."
+];
+const BADGES = [
+  {id:'start',days:3,name:'Shuruat ho gayi 🌱',desc:'3 din ka streak complete!',emoji:'🌱'},
+  {id:'week',days:7,name:'Ek hafte warrior 💪',desc:'Poora 1 week consistent!',emoji:'💪'},
+  {id:'habit',days:14,name:'Habit ban rahi hai 🔥',desc:'14 din — ab yeh routine hai!',emoji:'🔥'},
+  {id:'legend',days:30,name:'Legend mode 🏆',desc:'30 din! Tu legend hai bhai!',emoji:'🏆'},
+];
+const DAY_NAMES_HI = ['Ravivar','Somvar','Mangalvar','Budhvar','Guruvar','Shukravar','Shanivar'];
+const DAY_SHORT = ['Rav','Som','Mang','Budh','Guru','Shuk','Shan'];
+const MONTH_NAMES = ['Jan','Feb','March','April','May','June','July','Aug','Sep','Oct','Nov','Dec'];
+
+// ==================== HELPERS ====================
+function todayKey(){const d=new Date();return `health_${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,'0')}_${String(d.getDate()).padStart(2,'0')}`}
+function dateToKey(d){return `health_${d.getFullYear()}_${String(d.getMonth()+1).padStart(2,'0')}_${String(d.getDate()).padStart(2,'0')}`}
+function getTodayData(){try{const d=localStorage.getItem(todayKey());return d?JSON.parse(d):{checked:{},mood_morning:null,mood_night:null,water_glasses:0,completed_at:null}}catch(e){return {checked:{},mood_morning:null,mood_night:null,water_glasses:0,completed_at:null}}}
+function saveTodayData(data){try{localStorage.setItem(todayKey(),JSON.stringify(data))}catch(e){}}
+function getMeta(){try{const m=localStorage.getItem('health_meta');return m?JSON.parse(m):{current_streak:0,longest_streak:0,badges_earned:[],total_days_tracked:0}}catch(e){return {current_streak:0,longest_streak:0,badges_earned:[],total_days_tracked:0}}}
+function saveMeta(m){try{localStorage.setItem('health_meta',JSON.stringify(m))}catch(e){}}
+function getDayData(dateObj){try{const d=localStorage.getItem(dateToKey(dateObj));return d?JSON.parse(d):null}catch(e){return null}}
+function timeToMin(t){const[h,m]=t.split(':').map(Number);return h*60+m}
+function nowMin(){const n=new Date();return n.getHours()*60+n.getMinutes()}
+function getScoreForData(data){if(!data)return 0;let done=0;ALL_TASKS.forEach(t=>{if(data.checked&&data.checked[t.id])done++});return done}
+function getScorePct(data){return Math.round((getScoreForData(data)/ALL_TASKS.length)*100)}
+function moodEmoji(v){if(!v)return '—';if(v<=3)return '😞';if(v<=6)return '😐';if(v<=8)return '😊';return '🔥'}
+function scoreColor(pct){if(pct>=70)return 'var(--green)';if(pct>=40)return 'var(--amber)';return 'var(--red)'}
+
+// ==================== AUDIO ====================
+let audioCtx=null;
+function playBeep(){
+  try{
+    if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.connect(g);g.connect(audioCtx.destination);
+    o.type='sine';o.frequency.setValueAtTime(600,audioCtx.currentTime);
+    g.gain.setValueAtTime(0.15,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.5);
+    o.start();o.stop(audioCtx.currentTime+0.5);
+  }catch(e){}
+}
+
+// ==================== TAB SWITCHING ====================
+function switchTab(tab){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>{if(b.getAttribute('onclick').includes(tab))b.classList.add('active')});
+  if(tab==='week')renderWeek();
+  if(tab==='badges')renderBadges();
+  document.getElementById('mainContent').scrollTop=0;
+}
+
+// ==================== RENDER ====================
+function renderAll(){
+  renderTime();
+  renderQuote();
+  renderNextTask();
+  renderProgress();
+  renderTimedTasks();
+  renderRuleTasks();
+  renderWater();
+  renderMood();
+}
+
+function renderTime(){
+  const n=new Date();
+  const h=String(n.getHours()).padStart(2,'0');
+  const m=String(n.getMinutes()).padStart(2,'0');
+  document.getElementById('timeDisplay').textContent=h+':'+m;
+  document.getElementById('dateDisplay').textContent=DAY_NAMES_HI[n.getDay()]+', '+n.getDate()+' '+MONTH_NAMES[n.getMonth()];
+}
+
+function renderQuote(){
+  const d=new Date();
+  const dayOfYear=Math.floor((d-new Date(d.getFullYear(),0,0))/(1000*60*60*24));
+  document.getElementById('quoteBox').textContent='"'+QUOTES[dayOfYear%QUOTES.length]+'"';
+}
+
+function renderNextTask(){
+  const data=getTodayData();
+  const now=nowMin();
+  let abhiTask=null,agleTask=null;
+  for(const t of TIMED_TASKS){
+    const tm=timeToMin(t.time);
+    if(!data.checked[t.id]){
+      if(tm<=now&&now-tm<=45&&!abhiTask)abhiTask=t;
+      if(tm>now&&!agleTask)agleTask=t;
+    }
+  }
+  // fallback: if no abhi, find most recent unchecked past task within 45min
+  const box=document.getElementById('nextTaskBox');
+  const allDone=ALL_TASKS.every(t=>data.checked[t.id]);
+  if(allDone){
+    box.innerHTML='<div class="congrats-box"><div class="emoji">🎉</div><p>Sab tasks complete! Bahut badhiya!</p></div>';
+    return;
+  }
+  let html='';
+  if(abhiTask){
+    html+=`<div class="abhi-karo"><div class="nt-label green">⚡ ABHI KARO</div><div class="nt-task">${abhiTask.emoji} ${abhiTask.name}</div><div class="nt-time">${abhiTask.time}</div></div>`;
+  }
+  if(agleTask){
+    html+=`<div class="agle-mein"><div class="nt-label blue">⏭ AGLE MEIN</div><div class="nt-task">${agleTask.emoji} ${agleTask.name}</div><div class="nt-time">${agleTask.time}</div></div>`;
+  }
+  if(!abhiTask&&!agleTask){
+    html='<div class="agle-mein"><div class="nt-label blue">📋</div><div class="nt-task">Baaki rules complete karo!</div></div>';
+  }
+  box.innerHTML=html;
+}
+
+function renderProgress(){
+  const data=getTodayData();
+  const done=getScoreForData(data);
+  const total=ALL_TASKS.length;
+  const pct=Math.round((done/total)*100);
+  const ring=document.getElementById('progressRing');
+  const circ=175.93;
+  ring.style.strokeDashoffset=circ-(circ*pct/100);
+  ring.style.stroke=scoreColor(pct);
+  document.getElementById('progressPct').textContent=pct+'%';
+  document.getElementById('progressPct').style.color=scoreColor(pct);
+  document.getElementById('scoreText').textContent=`${done}/${total} tasks — ${pct}%`;
+  const meta=getMeta();
+  document.getElementById('streakText').textContent=`🔥 ${meta.current_streak} din ka streak!`;
+}
+
+function renderTimedTasks(){
+  const data=getTodayData();
+  const now=nowMin();
+  let html='';
+  TIMED_TASKS.forEach(t=>{
+    const checked=data.checked[t.id]||false;
+    const tm=timeToMin(t.time);
+    const overdue=!checked&&tm<now&&now-tm>45;
+    const current=!checked&&tm<=now&&now-tm<=45;
+    let cls='task-item';
+    if(checked)cls+=' checked';
+    if(overdue)cls+=' overdue';
+    if(current)cls+=' current';
+    html+=`<div class="${cls}" onclick="toggleTask('${t.id}')"><span class="task-emoji">${t.emoji}</span><div class="task-body"><div class="task-name">${t.name}</div><div class="task-time">${t.time}${overdue?' — ⚠️ Chhut gaya!':''}</div></div><div class="task-check"></div></div>`;
+  });
+  document.getElementById('timedTaskList').innerHTML=html;
+}
+
+function renderRuleTasks(){
+  const data=getTodayData();
+  let html='';
+  RULE_TASKS.forEach(t=>{
+    const checked=data.checked[t.id]||false;
+    let cls='task-item';if(checked)cls+=' checked';
+    html+=`<div class="${cls}" onclick="toggleTask('${t.id}')"><span class="task-emoji">${t.emoji}</span><div class="task-body"><div class="task-name">${t.name}</div></div><div class="task-check"></div></div>`;
+  });
+  document.getElementById('ruleTaskList').innerHTML=html;
+}
+
+function renderWater(){
+  const data=getTodayData();
+  const g=data.water_glasses||0;
+  document.getElementById('waterCount').textContent=`${g}/16 glasses`;
+  document.getElementById('waterBar').style.width=Math.min(100,g/16*100)+'%';
+}
+
+function renderMood(){
+  const data=getTodayData();
+  ['morning','night'].forEach(session=>{
+    const container=document.getElementById(`mood${session.charAt(0).toUpperCase()+session.slice(1)}Btns`);
+    const saved=document.getElementById(`mood${session.charAt(0).toUpperCase()+session.slice(1)}Saved`);
+    const val=session==='morning'?data.mood_morning:data.mood_night;
+    let html='';
+    for(let i=1;i<=10;i++){
+      html+=`<button class="mood-btn${val===i?' active':''}" onclick="setMood('${session}',${i})">${i}</button>`;
+    }
+    container.innerHTML=html;
+    if(val){saved.textContent=`${moodEmoji(val)} Saved: ${val}/10`}else{saved.textContent=''}
+  });
+}
+
+// ==================== ACTIONS ====================
+function toggleTask(id){
+  const data=getTodayData();
+  data.checked[id]=!data.checked[id];
+  data.completed_at=Date.now();
+  saveTodayData(data);
+  updateStreak();
+  renderAll();
+}
+
+function changeWater(delta){
+  const data=getTodayData();
+  data.water_glasses=Math.max(0,Math.min(30,(data.water_glasses||0)+delta));
+  saveTodayData(data);
+  renderWater();
+}
+
+function setMood(session,val){
+  const data=getTodayData();
+  if(session==='morning')data.mood_morning=val;else data.mood_night=val;
+  saveTodayData(data);
+  renderMood();
+}
+
+// ==================== STREAK ====================
+function updateStreak(){
+  let meta=getMeta();
+  let streak=0;
+  const today=new Date();
+  today.setHours(0,0,0,0);
+  // Check consecutive days backwards
+  for(let i=0;i<365;i++){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    const dd=getDayData(d);
+    if(dd&&getScorePct(dd)>=60){streak++}
+    else if(i===0){
+      // Today might not be 60% yet, still count previous
+      const yesterday=new Date(today);yesterday.setDate(yesterday.getDate()-1);
+      const yd=getDayData(yesterday);
+      if(i===0&&(!dd||getScorePct(dd)<60)){
+        // Check if today is in progress — don't break streak yet
+        // Just count from yesterday
+        streak=0;
+        for(let j=1;j<365;j++){
+          const d2=new Date(today);d2.setDate(d2.getDate()-j);
+          const dd2=getDayData(d2);
+          if(dd2&&getScorePct(dd2)>=60)streak++;else break;
+        }
+        // If today >= 60%, add today
+        if(dd&&getScorePct(dd)>=60)streak++;
+        break;
+      }
+    }
+    else{break}
+  }
+  const oldStreak=meta.current_streak;
+  meta.current_streak=streak;
+  if(streak>meta.longest_streak)meta.longest_streak=streak;
+  // Count total days
+  let total=0;for(let i=0;i<365;i++){const d=new Date(today);d.setDate(d.getDate()-i);if(getDayData(d))total++}
+  meta.total_days_tracked=total;
+  // Check badges
+  let newBadge=null;
+  BADGES.forEach(b=>{
+    if(streak>=b.days&&!meta.badges_earned.includes(b.id)){
+      meta.badges_earned.push(b.id);
+      newBadge=b;
+    }
+  });
+  saveMeta(meta);
+  if(newBadge)showMilestone(newBadge);
+}
+
+function showMilestone(badge){
+  document.getElementById('mpEmoji').textContent=badge.emoji;
+  document.getElementById('mpTitle').textContent=badge.name;
+  document.getElementById('mpDesc').textContent=badge.desc;
+  document.getElementById('milestonePopup').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+  playBeep();
+}
+function closeMilestone(){
+  document.getElementById('milestonePopup').classList.remove('show');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ==================== WEEKLY ====================
+function renderWeek(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const days=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(today);d.setDate(d.getDate()-i);
+    const data=getDayData(d);
+    const pct=data?getScorePct(data):0;
+    const mood=data?(data.mood_morning||data.mood_night||null):null;
+    days.push({date:d,data,pct,mood,dayName:DAY_SHORT[d.getDay()]});
+  }
+  const avg=Math.round(days.reduce((s,d)=>s+d.pct,0)/7);
+  document.getElementById('weekAvg').textContent=avg+'%';
+  document.getElementById('weekAvg').style.color=scoreColor(avg);
+
+  const bestPct=Math.max(...days.map(d=>d.pct));
+  let daysHtml='';
+  days.forEach(d=>{
+    const isBest=d.pct===bestPct&&d.pct>0;
+    daysHtml+=`<div class="week-day${isBest?' best':''}" style="background:${d.pct>0?scoreColor(d.pct)+'15':'#222'}"><div class="d-name">${d.dayName}</div><div class="d-score" style="color:${scoreColor(d.pct)}">${d.pct}%</div><div class="d-emoji">${moodEmoji(d.mood)}</div></div>`;
+  });
+  document.getElementById('weekDays').innerHTML=daysHtml;
+
+  // Bar chart
+  let barHtml='';
+  days.forEach(d=>{
+    barHtml+=`<div class="bar-wrap"><div class="bar-val" style="color:${scoreColor(d.pct)}">${d.pct}%</div><div class="bar" style="height:${Math.max(2,d.pct)}%;background:${scoreColor(d.pct)}"></div><div class="bar-label">${d.dayName}</div></div>`;
+  });
+  document.getElementById('barChart').innerHTML=barHtml;
+
+  // Supplement compliance
+  const suppIds=TIMED_TASKS.filter(t=>t.cat==='supplement').map(t=>t.id);
+  let suppDone=0,suppTotal=suppIds.length*7;
+  days.forEach(d=>{if(d.data)suppIds.forEach(id=>{if(d.data.checked&&d.data.checked[id])suppDone++})});
+  document.getElementById('suppComp').innerHTML=`<div class="comp-card"><div class="comp-num" style="color:var(--green)">${suppDone}</div><div class="comp-lbl">Supplements liye</div></div><div class="comp-card"><div class="comp-num" style="color:var(--text2)">${suppTotal}</div><div class="comp-lbl">Total possible</div></div>`;
+
+  // Skin compliance
+  let noSugar=0,noDairy=0;
+  days.forEach(d=>{if(d.data&&d.data.checked){if(d.data.checked['no_sugar'])noSugar++;if(d.data.checked['no_dairy'])noDairy++}});
+  document.getElementById('skinComp').innerHTML=`<div class="comp-card"><div class="comp-num" style="color:var(--green)">${noSugar}/7</div><div class="comp-lbl">Sugar avoided</div></div><div class="comp-card"><div class="comp-num" style="color:var(--green)">${noDairy}/7</div><div class="comp-lbl">Dairy avoided</div></div>`;
+}
+
+// ==================== BADGES ====================
+function renderBadges(){
+  const meta=getMeta();
+  document.getElementById('badgeStreakNum').textContent=meta.current_streak;
+  document.getElementById('badgeBestStreak').textContent=`Best: ${meta.longest_streak} din`;
+  let html='';
+  BADGES.forEach(b=>{
+    const earned=meta.badges_earned.includes(b.id);
+    html+=`<div class="badge-card${earned?' earned badge-anim':''}"><div class="badge-emoji">${b.emoji}</div><div class="badge-info"><div class="b-name">${b.name}</div><div class="b-desc">${earned?b.desc:`${b.days} din streak chahiye`}</div></div></div>`;
+  });
+  document.getElementById('badgeList').innerHTML=html;
+}
+
+// ==================== NOTIFICATIONS ====================
+let notifiedTasks=new Set();
+let notifTimeout=null;
+function checkNotifications(){
+  const data=getTodayData();
+  const now=nowMin();
+  TIMED_TASKS.filter(t=>t.cat==='supplement').forEach(t=>{
+    const tm=timeToMin(t.time);
+    if(tm<=now&&now-tm<=5&&!data.checked[t.id]&&!notifiedTasks.has(t.id)){
+      notifiedTasks.add(t.id);
+      showNotif(`⏰ ${t.emoji} ${t.name}`);
+      playBeep();
+    }
+  });
+}
+function showNotif(text){
+  document.getElementById('notifText').textContent=text;
+  document.getElementById('notifBanner').classList.add('show');
+  clearTimeout(notifTimeout);
+  notifTimeout=setTimeout(dismissNotif,10000);
+}
+function dismissNotif(){
+  document.getElementById('notifBanner').classList.remove('show');
+  clearTimeout(notifTimeout);
+}
+
+// ==================== INIT ====================
+function init(){
+  updateStreak();
+  renderAll();
+  // Update every minute
+  setInterval(()=>{renderTime();renderNextTask();checkNotifications()},30000);
+  // Update every 5s for more responsiveness on current task
+  setInterval(()=>{renderTime()},5000);
+  checkNotifications();
+}
+init();
+</script>
+</body>
+</html>
