@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Daily Health Tracker</title>
+<link rel="manifest" href="/health/manifest.json">
+<meta name="theme-color" content="#4A9EFF">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HealthTrack">
+<link rel="apple-touch-icon" href="/health/icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -656,6 +663,132 @@ function init(){
   checkNotifications();
 }
 init();
+</script>
+
+<!-- ==================== PWA: Service Worker + Notifications ==================== -->
+<script>
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/health/sw.js')
+      .then((registration) => {
+        console.log('[PWA] Service Worker registered successfully, scope:', registration.scope);
+      })
+      .catch((error) => {
+        console.log('[PWA] Service Worker registration failed:', error);
+      });
+  });
+}
+
+// Ask Notification Permission — only ONCE on first visit
+(function askNotifPermission() {
+  if (!('Notification' in window)) return;
+  const asked = localStorage.getItem('notif_permission_asked');
+  if (!asked) {
+    Notification.requestPermission().then((permission) => {
+      console.log('[PWA] Notification permission:', permission);
+      localStorage.setItem('notif_permission_asked', 'true');
+    });
+  }
+})();
+
+// ==================== NOTIFICATION TIMING SYSTEM ====================
+(function initNotifTimer() {
+  const NOTIF_SCHEDULE = [
+    { id: 'amla_morning',  hour: 6,  min: 15, msg: 'Amla juice lene ka time ho gaya! \uD83C\uDF43' },
+    { id: 'ashwagandha',   hour: 8,  min: 30, msg: 'Ashwagandha lene ka time ho gaya! \uD83C\uDF3F' },
+    { id: 'lions_mane',    hour: 9,  min: 0,  msg: "Lion's Mane lene ka time ho gaya! \uD83C\uDF44" },
+    { id: 'zinc',          hour: 14, min: 0,  msg: 'Zinc lene ka time ho gaya! \u26A1' },
+    { id: 'collagen',      hour: 21, min: 0,  msg: 'Collagen + Amla lene ka time ho gaya! \u2728' },
+    { id: 'triphala',      hour: 22, min: 0,  msg: 'Triphala churan lene ka time ho gaya! \uD83C\uDF19' },
+    { id: 'sleep_prep',    hour: 22, min: 30, msg: 'Phone band karo! Sone ki taiyari karo \uD83D\uDE34' }
+  ];
+
+  function getNotifSentKey() {
+    const d = new Date();
+    return `notif_sent_${d.getFullYear()}_${String(d.getMonth() + 1).padStart(2, '0')}_${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  function getSentIds() {
+    try {
+      const data = localStorage.getItem(getNotifSentKey());
+      return data ? JSON.parse(data) : [];
+    } catch (e) { return []; }
+  }
+
+  function markSent(taskId) {
+    const sent = getSentIds();
+    if (!sent.includes(taskId)) {
+      sent.push(taskId);
+      localStorage.setItem(getNotifSentKey(), JSON.stringify(sent));
+    }
+  }
+
+  function isTaskCheckedToday(taskId) {
+    try {
+      const d = new Date();
+      const key = `health_${d.getFullYear()}_${String(d.getMonth() + 1).padStart(2, '0')}_${String(d.getDate()).padStart(2, '0')}`;
+      const data = localStorage.getItem(key);
+      if (!data) return false;
+      const parsed = JSON.parse(data);
+      return parsed.checked && parsed.checked[taskId];
+    } catch (e) { return false; }
+  }
+
+  function showLocalNotification(title, body) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+
+    // Use service worker for notification if available
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.ready.then((registration) => {
+        registration.showNotification(title, {
+          body: body,
+          icon: '/health/icons/icon-192.png',
+          badge: '/health/icons/icon-192.png',
+          vibrate: [200, 100, 200],
+          data: { url: 'https://digitalservicesltd.github.io/health/' }
+        });
+      });
+    } else {
+      // Fallback: basic Notification API
+      new Notification(title, {
+        body: body,
+        icon: '/health/icons/icon-192.png'
+      });
+    }
+  }
+
+  function checkScheduledNotifications() {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMin = now.getMinutes();
+    const sentIds = getSentIds();
+
+    NOTIF_SCHEDULE.forEach((item) => {
+      // Within 1 minute window of scheduled time
+      const scheduledTotal = item.hour * 60 + item.min;
+      const currentTotal = currentHour * 60 + currentMin;
+      const diff = currentTotal - scheduledTotal;
+
+      if (diff >= 0 && diff <= 1) {
+        // Not already sent today
+        if (!sentIds.includes(item.id)) {
+          // Task not already checked today
+          if (!isTaskCheckedToday(item.id)) {
+            showLocalNotification('Health Tracker', item.msg);
+            markSent(item.id);
+          }
+        }
+      }
+    });
+  }
+
+  // Check every 60 seconds
+  setInterval(checkScheduledNotifications, 60000);
+  // Also check immediately on load
+  checkScheduledNotifications();
+})();
 </script>
 </body>
 </html>
